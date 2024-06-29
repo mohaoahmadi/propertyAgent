@@ -134,10 +134,9 @@ def main():
     property_type = st.sidebar.multiselect("Property Type", [pt.name for pt in PropertyType])
     search_type = st.sidebar.radio("Search Type", ["Residential Sale", "New Homes"])
     
-    # Add BER rating selection
-    ber_options = [ber.name for ber in Ber]
-    min_ber = st.sidebar.selectbox("Minimum BER Rating", ber_options, index=len(ber_options)-1)
-    max_ber = st.sidebar.selectbox("Maximum BER Rating", ber_options, index=0)
+    # Add BER Energy Rating to search criteria
+    ber_options = ['Any'] + [ber.name for ber in Ber]
+    ber_rating = st.sidebar.selectbox("Minimum BER Energy Rating", ber_options)
 
     if st.sidebar.button("Search Properties"):
         try:
