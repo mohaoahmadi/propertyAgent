@@ -87,7 +87,6 @@ def process_listing(listing):
     return {
         'title': safe_get(full_dict, 'title', 'N/A'),
         'price': parse_price(safe_get(full_dict, 'price', 'N/A')),
-        'monthly_price': parse_price(mapping_dict.get('monthly_price', 'N/A')),
         'bedrooms': mapping_dict.get('bedrooms', 'N/A'),
         'bathrooms': mapping_dict.get('bathrooms', 'N/A'),
         'floor_size': safe_get(full_dict.get('floorArea', {}), 'value', 'N/A'),
@@ -97,8 +96,13 @@ def process_listing(listing):
         'longitude': mapping_dict.get('longitude'),
     }
 
+def highlight_green_mortgage(val):
+    green_mortgage_ratings = ['A1', 'A2', 'A3', 'B1', 'B2', 'B3']
+    return 'background-color: #487348' if val in green_mortgage_ratings else ''
+
+
 def main():
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide", page_icon="🏡")
     st.title("Property Search and Mortgage Calculator App")
 
     # Sidebar for inputs
@@ -121,7 +125,8 @@ def main():
     mortgage_df['total_interest'] = mortgage_df['total_interest'].apply(lambda x: f"€{x:.2f}")
     mortgage_df['loan_to_value_ratio'] = mortgage_df['loan_to_value_ratio'].apply(lambda x: f"{x:.2f}%")
     mortgage_df['is_green'] = mortgage_df['is_green'].apply(lambda x: 'Yes' if x else 'No')
-    st.table(mortgage_df)
+    mortgage_html = mortgage_df.to_html(index=False, escape=False, justify='center')
+    st.write(mortgage_html, unsafe_allow_html=True)
 
     # Property Search
     st.sidebar.header("Property Search Criteria")
@@ -167,11 +172,34 @@ def main():
                 
                 # Display results in a table
                 st.subheader("Search Results")
-                display_df = df.copy()
+                
+                # Remove longitude and latitude columns
+                columns_to_display = ['title', 'price', 'bedrooms', 'bathrooms', 'floor_size', 'ber_rating', 'daft_link']
+                display_df = df[columns_to_display].copy()
+                
+                # Format the data
                 display_df['price'] = display_df['price'].apply(lambda x: f"€{x:,.0f}" if pd.notnull(x) else 'N/A')
                 display_df['floor_size'] = display_df['floor_size'].apply(lambda x: f"{x} sqm" if x != 'N/A' else 'N/A')
                 display_df['daft_link'] = display_df['daft_link'].apply(lambda x: f'<a href="{x}" target="_blank">View</a>' if x != 'N/A' else 'N/A')
-                st.write(display_df[['title', 'price', 'bedrooms', 'bathrooms', 'floor_size', 'ber_rating', 'daft_link']].to_html(escape=False, index=False), unsafe_allow_html=True)
+                
+                # Create a style function
+                def style_df(row):
+                    return ['background-color: #487348' if row['ber_rating'] in ['A1', 'A2', 'A3', 'B1', 'B2', 'B3'] else '' for _ in row]
+                
+                # Apply the style
+                styled_df = display_df.style.apply(style_df, axis=1)
+                
+                # Set table styles
+                styled_df.set_table_styles([
+                    {'selector': 'th', 'props': [('text-align', 'center')]},
+                    {'selector': 'td', 'props': [('text-align', 'center')]}
+                ])
+                
+                # Convert styled dataframe to HTML, explicitly removing index
+                styled_html = styled_df.hide(axis="index").to_html(escape=False)
+                
+                # Display the styled table
+                st.write(styled_html, unsafe_allow_html=True)
                 
                 # Clean data for map visualization
                 map_data = df[['latitude', 'longitude', 'price', 'bedrooms', 'bathrooms', 'ber_rating', 'daft_link']].copy()
