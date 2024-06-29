@@ -136,7 +136,8 @@ def main():
     
     # Add BER Energy Rating to search criteria
     ber_options = ['Any'] + [ber.name for ber in Ber]
-    ber_rating = st.sidebar.selectbox("Minimum BER Energy Rating", ber_options)
+    min_ber_rating = st.sidebar.selectbox("Minimum BER Energy Rating", ber_options)
+    max_ber_rating = st.sidebar.selectbox("Maximum BER Energy Rating", ber_options)
 
     if st.sidebar.button("Search Properties"):
         try:
@@ -152,9 +153,11 @@ def main():
                 daft.set_property_type(getattr(PropertyType, pt))
             daft.set_sort_type(SortType.PRICE_ASC)
             
-            # Set BER rating for search if not 'Any'
-            if ber_rating != 'Any':
-                daft.set_min_ber(getattr(Ber, ber_rating))
+            # Set BER range
+            if min_ber_rating != 'Any':
+                daft.set_min_ber(getattr(Ber, min_ber_rating))
+            if max_ber_rating != 'Any':
+                daft.set_max_ber(getattr(Ber, max_ber_rating))
 
             listings = daft.search()
             
